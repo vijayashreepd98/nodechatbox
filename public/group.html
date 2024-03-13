@@ -1,0 +1,187 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+ 
+    <style>
+        body{
+            width:auto;
+        }
+        .modal {
+            display: none;
+            position: fixed; 
+   
+            z-index: 1;
+            padding-top: 10px; 
+            padding-bottom: 10px;  
+            width: 200px; 
+            height: 60px; 
+            background-color: rgb(0,0,0); 
+            background-color: rgba(0,0,0,0.4); 
+        }
+
+
+        .modal-content {
+            background-color: #fefefe;
+            padding-left: 10px;
+            border: 1px solid #888;
+            width: 200px;
+            height: 30px;;
+        }
+        .private {
+            display:none;
+            position: relative;
+            top:-60%;
+            left:40%;
+
+            background-color: lightgrey;
+            width: 500px;
+            height: 350px;
+            border: 15px solid green;
+            padding: 50px;
+            margin: 20px;
+            overflow:scroll;
+        }
+        #creategroup {
+            display: none;
+        }
+        #groupcontainer{
+            display: none;
+        }
+        .display{
+            display: none;
+        }
+
+    </style>
+</head>
+    <body>
+        <h3 style="text-align: center;">CHAT BOX</h3> 
+       
+
+       
+        <h4 style="position: relative;left:15%;" >GROUP MEMBER</h4>
+        <div id="container" class="container" style="position: relative;left:-25%;width:300px;height:350px;overflow:auto;"></div>
+        
+        <button id="join" class="btn btn-primary" style="position: relative;left:20%;top:-10%;">JOIN</button>
+        <div class="private" id ="private">
+            <h3 id="user" class="user" style="text-align: center;position: relative;top:-20%;"></h3>
+        </div>
+        <div id="alert"></div>
+        <form id="message_body" class="display">
+            <div class="input-group" style="width:600px;position: relative;left:30%;top:-20%;">
+                
+                <input type="text" class="form-control" placeholder="Type text here!!!!.." name="val"  id="message">
+                <div class="input-group-btn">
+                    <button class="btn btn-default" type="submit" style="background-color: aqua;" id="btn"><i class="glyphicon glyphicon-search" >SEND</i></button>
+                </div>
+            </div>
+        </form>
+            
+        <script src = "/socket.io/socket.io.js"></script>
+        <script> 
+            let socket  = io('/group');
+            
+            let params = new URLSearchParams(window.location.search);
+
+            let groupdetails = {
+                groupname:params.get('group'),
+                users:params.get('users'),
+                username : params.get('username')
+            }
+            let userlist = groupdetails.users.split(',');
+            /*displaying available user name */ 
+            for(let i=0;i<userlist.length;i++){
+                let h3 = document.createElement('h6');
+                h3.appendChild(document.createTextNode(""+userlist[i]));
+                document.getElementById("container").appendChild(h3).classList.add("list-group-item");
+            }
+            //notifying new user  who have same username with existed one
+            let group ={
+             username :groupdetails.username,
+             groupname:groupdetails.groupname
+            }  
+            let button = document.getElementById("join");
+            /*when user want to join*/
+            button.onclick=function() {
+                socket.emit('join',group);
+            }
+
+            socket.on("permission",(groupdetails)=> {
+                document.querySelector('.private .user  ').innerHTML=groupdetails.groupname;
+                private.style.display="block";
+                document.getElementById("message_body").style.display="block"; 
+
+            });
+
+            socket.on("display",(username)=>{
+                document.querySelector('.private .user  ').innerHTML=groupdetails.groupname;
+                private.style.display="block";
+                document.getElementById("message_body").style.display="block";
+            });
+            let message_content=[];
+            document.querySelector("#message_body").addEventListener("submit",(e) =>{
+                e.preventDefault();
+                let message =  document.getElementById("message").value;
+                document.getElementById("message").value =" ";
+                message_body ={
+                    message_value:message,
+                    username:params.get('username'),
+                    groupname:params.get('groupname')
+                }
+                message_content.push(message_body);
+                //sending message body to the server side
+                socket.emit('group_send_message',message_body);
+            });
+
+            socket.on('sendall',(messages)=>{
+                for(let i=0;i<messages.length;i++){
+                    let h1 = document.createElement('h6');
+                    h1.appendChild(document.createTextNode("FROM: "+messages[i].username+"\t"+messages[i].message_value));
+                    document.getElementById("private").appendChild(h1).classList.add("list-group-item"); 
+                    let obj1 = document.querySelectorAll('.private .list-group-item  ');
+                        if(messages[i].username==group.username){
+                            let currentEl = obj1[i];
+                            currentEl.style.backgroundColor= "skyblue";
+
+                        }else{
+                            let currentEl = obj1[i];
+                            currentEl.style.backgroundColor= "yellow"; 
+                        }
+                } 
+                private.style.display="block";
+            });
+
+            socket.on("sendone",(messages) => {
+                for(let i=0;i<messages.length;i++){
+                    let h1 = document.createElement('h6');
+                    h1.appendChild(document.createTextNode("FROM: "+messages[i].username+"\t"+messages[i].message_value));
+                    document.getElementById("private").appendChild(h1).classList.add("list-group-item");   
+                    let obj1 = document.querySelectorAll('.private .list-group-item  ');
+                    if(messages[i].username==group.username){
+                        let currentEl = obj1[i];
+                        currentEl.style.backgroundColor= "skyblue";
+
+                    }else{
+                        let currentEl = obj1[i];
+                        currentEl.style.backgroundColor= "yellow"; 
+                    }
+                } 
+                private.style.display="block";
+            });
+        </script>
+       
+    </body>
+</html>
+
+

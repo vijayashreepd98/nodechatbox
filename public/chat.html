@@ -1,0 +1,426 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+ 
+    <style>
+        body{
+            width:auto;
+        }
+        .modal {
+            display: none;
+            position: fixed; 
+   
+            z-index: 1;
+            padding-top: 10px; 
+            padding-bottom: 10px;  
+            width: 200px; 
+            height: 60px; 
+            background-color: rgb(0,0,0); 
+            background-color: rgba(0,0,0,0.4); 
+        }
+
+
+        .modal-content {
+            background-color: #fefefe;
+            padding-left: 10px;
+            border: 1px solid #888;
+            width: 200px;
+            height: 30px;;
+        }
+        .private {
+            display:none;
+            position: relative;
+            top:-120%;
+            left:30%;
+
+            background-color: lightgrey;
+            width: 500px;
+            height: 350px;
+            border: 15px solid green;
+            padding: 50px;
+            margin: 20px;
+            overflow:scroll;
+        }
+        #creategroup {
+            display: none;
+        }
+        #groupcontainer{
+            display: none;
+        }
+
+    </style>
+</head>
+    <body>
+        <h3 style="text-align: center;">CHAT BOX</h3> 
+       
+
+        <div id="myModal" class="modal" >
+            <div class="modal-content"> 
+                <p class = "para"></p>
+            </div> 
+        </div> 
+        <div id="container1" class="container"></div>
+        <h4 style="position: relative;left:75%;" >ACTIVE USER</h4>
+        <div id="container2" class="container" style="position: relative;left:35%;width:300px;height:350px;overflow:auto;"></div>
+        
+        <h4 style="position: relative;left:10%;top:-58%;">MESSAGE LIST</h4>
+        <form id="message_body">
+            <div class="input-group" style="width:600px;position: relative;left:30%;top:50%;">
+                <input type="text" class="form-control" placeholder="To" name="recipient" id="recipient">
+                <input type="text" class="form-control" placeholder="Type text here!!!!.." name="val"  id="message">
+                <div class="input-group-btn">
+                    <button class="btn btn-default" type="submit" style="background-color: aqua;" id="btn"><i class="glyphicon glyphicon-search" >SEND</i></button>
+                </div>
+            </div>
+        </form>
+	
+        <div id="container" class="container" style="position: relative;top:-60%;left:-20%;width:500px;height:350px;overflow:auto;"></div>
+        <div class="private" id ="private">
+            <h3 id="user" class="user" style="text-align: center;position: relative;top:-20%;"></h3>
+        </div>
+        <div id ="creategroup">
+            <button id="button">CREATE GROUP</button>
+        </div>
+        <div class="groupcontainer" id="groupcontainer">
+            <h2 style="text-align: center;">CREATE GROUP</h2>
+     
+            <div class = "form-group">
+                <label for = "firstname" class = "col-sm-2 control-label">Group Name</label>
+                <div class = "col-sm-10">
+                    <input type = "text" class = "form-control" id = "groupname" placeholder = "Enter Group Name">
+                </div>
+            </div>
+            <div class = "form-group" id="member">                 
+                <div class="multiselect">
+                    <div class="selectBox" onclick="createcheckbox()">
+                       <select>
+                         <option>Select a member</option>
+                        </select>
+                        <div class="overSelect"></div>
+                    </div>
+                    <div id="checkboxes" class="checkbox">
+                       
+                    </div>
+                </div>          
+            </div>
+              
+            <div class = "form-group">
+                <div class = "col-sm-offset-2 col-sm-10">
+                    <button type = "submit" class = "btn btn-default" onclick="add()">Create Group</button>
+                </div>
+            </div>
+        </div>
+        <h3>ACTIVE GROUP</h3>
+            <div class ="join" id="join">
+            </div>
+        <script src = "/socket.io/socket.io.js"></script>
+        <script> 
+            let socket  = io();
+            
+            let params = new URLSearchParams(window.location.search);
+            //notifying new user  who have same username with existed one
+            socket.on('notification',(message) => {
+                alert(message);
+                window.location.href="/";
+            });
+            // getting users crendential from path specified in tab
+            let user = {username : params.get('username'),
+                room:params.get('room')
+            }
+            //displaying user list
+            socket.on('newuser',(users) => {
+                let conversation = document.getElementById("private");
+                let h1=" ";
+                let element =document.getElementById("container2");
+                element.textContent="";
+                h5 = document.createElement('li');
+                h5.appendChild(document.createTextNode("YOU"));
+                document.getElementById("container2").appendChild(h5).classList.add("list-group-item");
+                for(let i =0;i<users.newuser.length;i++){
+                    h1 = document.createElement('li');
+                  
+                    if(users.newuser[i]==user.username){
+                        continue;
+                    
+                    }else {
+                        h1.appendChild(document.createTextNode(users.newuser[i]));
+                    }                                       
+                    document.getElementById("container2").appendChild(h1).classList.add("list-group-item");
+                    h1.onclick = function(){
+                       
+                        let list = document.getElementById("container2");
+                        let text =list.getElementsByClassName("list-group-item")[i].textContent; 
+                        
+                        document.getElementById("recipient").value = users.newuser[i];
+                        document.querySelector('.private .user  ').innerHTML=users.newuser[i];
+                        let currentuser = {
+                            recipient :users.newuser[i],
+                            sender:user.username
+                        }
+                        private.style.display="block";
+
+                        for(let i=1;i<users.newuser.length;i++){
+                            
+                            let  list = document.getElementById("container2");
+
+                            list.getElementsByClassName("list-group-item")[i].onclick = function() {
+                            
+                                 
+                            
+                                let text =list.getElementsByClassName("list-group-item")[i].textContent;
+                            
+                                let lists = document.getElementById("private");
+                            
+                                while (lists.childNodes.length > 2) {
+                                    lists.removeChild(lists.lastChild);
+                                }
+                                document.getElementById("recipient").value = text;
+                           
+                           
+                                document.querySelector('.private .user  ').innerHTML=text;
+                                let texts = "";
+                                let count =0;
+                                for(let i=0;i<users.allmessage.length;i++){
+
+                                    if(users.allmessage[i].recipient==text&&user.username==users.allmessage[i].username){
+                                        count =count+1;
+                                        privatemessagerecipient(users.allmessage[i].message_value,users.allmessage[i].username,users.allmessage[i].recipient,count);
+                                                                                                               
+                                    }
+                                    else if(users.allmessage[i].username==text&&user.username == users.allmessage[i].recipient){
+                                        count=count+1;
+                                        privatemessagesender(users.allmessage[i].message_value,users.allmessage[i].username,users.allmessage[i].recipient,count);
+                                    }
+                                    else{
+                                        continue;
+                                    }
+                                }
+    
+                                function  privatemessagesender(currentnewmessage,sender,receiver,count){
+                                    let h3 = document.createElement('h6');
+                                    h3.appendChild(document.createTextNode(""+currentnewmessage));
+                                    document.getElementById("private").appendChild(h3).classList.add("list-group-item");
+                                    let obj = document.querySelectorAll('.private .list-group-item  ');
+                                    if(sender==user.username){
+                                        let currentEl = obj[count-1];
+                                        currentEl.style.backgroundColor= "yellow";
+
+                                    }else{
+                                        let currentEl = obj[count-1];
+                                        currentEl.style.backgroundColor= "skyblue";
+
+
+                                    }
+                                   
+                                }
+                                function privatemessagerecipient(currentnewmessage,sender,receiver,count) {
+                                    let h3 = document.createElement('h6');
+                                    h3.appendChild(document.createTextNode(""+currentnewmessage));
+                                    document.getElementById("private").appendChild(h3).classList.add("list-group-item");
+                                    let obj1 = document.querySelectorAll('.private .list-group-item  ');
+                                    if(receiver==user.username){
+                                        let currentEl = obj1[count-1];
+                                        currentEl.style.backgroundColor= "skyblue";
+
+                                    }else{
+                                        let currentEl = obj1[count-1];
+                                        currentEl.style.backgroundColor= "yellow"; 
+                                    }
+                                }
+                            private.style.display="block";
+                        }
+                    }
+                }
+                        
+            }
+                   
+        });
+
+        //adding new user to user list
+        socket.on('userview',(userlist) => {
+            let h1=" ";
+            h1 = document.createElement('button');
+            h1.appendChild(document.createTextNode(userlist[userlist.length]));  
+            document.getElementById("container2").appendChild(h1).classList.add("list-group-item");         
+               
+        });
+        //greeting new user
+        let alluser =[];
+        socket.on('message',(messages) =>{
+            if(user.username=="admin"){
+                
+                let creategroup = document.getElementById('creategroup');
+                creategroup.style.display="block";
+                creategroup.onclick = function(){
+                    for(let i=0;i<messages.newuser.length;i++){
+                        alluser.push(messages.newuser[i]);
+                    }
+                   groupcontainer.style.display="block";
+                }
+
+            }
+            let h1 = document.createElement('h6');
+            h1.appendChild(document.createTextNode(messages.message));
+            document.getElementById("container1").appendChild(h1).classList.add("list-group-item");          
+        });
+        //notification to all existed user  about joing of new user
+        socket.on('newusermessage',(message) =>{
+            document.querySelector('.modal .modal-content .para ').innerHTML="<p>"+message+"</p>";
+            let modal = document.getElementById("myModal");
+            modal.style.display = "block";
+            setTimeout(function(){
+                modal.style.display = "none";
+            }, 5000);
+                
+        });
+        // notification to all available users about leaving of perticular user
+        socket.on('userleft',(message) => {
+            document.querySelector('.modal .modal-content .para ').innerHTML="<p><strong>"+message+"</strong></p>";
+            let modal = document.getElementById("myModal");
+            modal.style.display = "block";
+            setTimeout(function(){
+                modal.style.display = "none";
+            }, 5000);
+                               
+        });
+        let message_content =[];
+        // when new user arrives then estabishing connection 
+        socket.emit('join',user);
+        document.querySelector("#message_body").addEventListener("submit",(e) =>{
+            e.preventDefault();
+            let recipient =  document.getElementById("recipient").value;
+            let message =  document.getElementById("message").value;
+            document.getElementById("message").value =" ";
+            message_body ={
+                message_value:message,
+                username:params.get('username'),
+                recipient: recipient,
+            }
+
+            message_content.push(message_body);
+           
+            //sending message body to the server side
+            socket.emit('send_message',message_body);
+        });
+
+        //chat history  in receiver side
+        socket.on('messages',(messages) => {
+            alert("you have some new messages");
+            let h1 = document.createElement('h6');
+            h1.appendChild(document.createTextNode("From:"+messages.message.username+"\u00A0\u00A0 \u00A0 \u00A0 \u00A0 \u00A0 \u00A0 > "+messages.message.message_value));
+            document.getElementById("container").appendChild(h1).classList.add("list-group-item");
+            let list = document.getElementById("container2");
+            socket.emit('homepage',messages);
+                
+        });
+        //chat history in sender side
+        socket.on('frommessage',(messages) =>{
+            let h1 = document.createElement('h6');
+            h1.appendChild(document.createTextNode("To"+messages.message.recipient+"\u00A0\u00A0 \u00A0 \u00A0 \u00A0 \u00A0 \u00A0 > "+messages.message.message_value));
+            document.getElementById("container").appendChild(h1).classList.add("list-group-item");
+            let  list = document.getElementById("container2");
+            socket.emit('homepage',messages);
+             
+        });
+        //conformation of message delivery
+        socket.on("conformation",(message) =>{
+            alert("Message delivered successfully!!");
+            
+
+        });
+        let message = user.username+" has left!!!!";
+        //call disconnecting connection
+        socket.emit('disconnect',message);
+        let j=1;
+        let expanded = false;
+        function createcheckbox(){
+            let lists= document.querySelector('.form-group .multiselect .checkbox');
+            while (lists.childNodes.length > 1) {
+                lists.removeChild(lists.lastChild);
+            }
+            if (!expanded) {
+                checkboxes.style.display = "block";
+                expanded = true;
+            } else {
+                checkboxes.style.display = "none";
+                expanded = false;
+            }
+
+            let user = alluser.splice(",");
+       
+            for(let i=0;i<user.length;i++){
+
+                let chk = document.createElement('input');  // CREATE CHECK BOX.
+                chk.setAttribute('type', 'checkbox');       // SPECIFY THE TYPE OF ELEMENT.
+                chk.setAttribute('id', 'memberName' + j);     // SET UNIQUE ID.
+                chk.setAttribute('value', user[i]);
+                chk.setAttribute('name', 'member');
+
+                let lbl = document.createElement('label');  // CREATE LABEL.
+                lbl.setAttribute('for', 'memberName' + j);
+            
+                // CREATE A TEXT NODE AND APPEND IT TO THE LABEL.
+                lbl.appendChild(document.createTextNode(user[i]));
+                if(user[i]=="admin"){
+                    chk.setAttribute('checked',true);
+                }
+                j++;
+                let br = document.createElement("br");
+            
+                let container= document.querySelector('.form-group .multiselect .checkbox');
+                container.appendChild(chk);
+                container.appendChild(lbl);
+                container.appendChild(br);
+
+            }
+            
+        }
+        function add() {
+            let groupname =document.getElementById('groupname').value;                    
+            let member = [] ;
+            $. each($("input[name='member']:checked"), function(){
+                member.push($(this). val());
+            }); 
+            if(groupname == " "||member.length == 0){
+                alert("Please fill the details!!!");
+            } else {
+                let groupdetails ={
+                    groupname :groupname,
+                    members:member
+                }
+                alert("you created group successfully");
+                socket.emit('newgroup',groupdetails);
+            }
+        }  
+          
+        socket.on('groupuser',(thisuser)=>{
+            let h1 = document.createElement("label");
+            h1.appendChild(document.createTextNode(thisuser.groupname));
+            document.getElementById("join").appendChild(h1).classList.add("list-group-item");
+            let list = document.getElementById("join");
+            let count = list.childNodes.length;
+            for(let i=0; i<count; i++) {
+                list.getElementsByClassName("list-group-item")[i].onclick = function() {
+                   
+                    let text =list.getElementsByClassName("list-group-item")[i].textContent;
+                    window.location.href = "./group.html?group="+text+"&users="+thisuser.members+"&username="+user.username;
+                }
+           }
+           
+        });
+
+
+    </script>
+       
+</body>
+</html>
+
+
